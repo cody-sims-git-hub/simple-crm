@@ -2,7 +2,7 @@
 
 A lightweight, multi-tenant CRM for insurance lead management — built to showcase a clean server-rendered Laravel architecture with an automated lead-scoring engine, per-user data isolation, and a tested codebase.
 
-![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?logo=php&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?logo=sqlite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)
@@ -21,7 +21,7 @@ It's intentionally small in surface area but deliberate in its engineering: the 
 
 | Layer | Technology |
 |-------|-----------|
-| Language | PHP 8.3 |
+| Language | PHP 8.4 |
 | Framework | Laravel 13 |
 | Database | SQLite (zero-config; swappable for MySQL/Postgres) |
 | ORM | Eloquent (global scopes, model events, relationships) |
@@ -83,7 +83,7 @@ The result: the controller contains zero ownership-handling code, yet isolation 
 
 ## Getting Started
 
-**Requirements:** PHP 8.3+, Composer, and (optionally) Node.js for asset builds.
+**Requirements:** PHP 8.4+, Composer, and (optionally) Node.js for asset builds.
 
 ```bash
 # Install dependencies, create .env, generate key, migrate + seed, build assets
