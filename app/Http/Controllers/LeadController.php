@@ -27,6 +27,7 @@ class LeadController extends Controller
     public function index()
     {
         $leads = Lead::query()->latest()->get();
+
         return view('leads.index', compact('leads'));
     }
 
@@ -42,7 +43,7 @@ class LeadController extends Controller
         ])->validate();
 
         $score = 50;
-        if (!empty($validated['phone'])) {
+        if (! empty($validated['phone'])) {
             $score += 20;
         }
         if ($validated['insurance_type'] === 'Health') {
@@ -70,7 +71,7 @@ class LeadController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        return redirect()->route('dashboard')->with('success', "Lead Ingested.");
+        return redirect()->route('dashboard')->with('success', 'Lead Ingested.');
     }
 
     // 4. Lead Detail Page view (CRUD - Read)
@@ -85,13 +86,14 @@ class LeadController extends Controller
         $request->validate(['status' => 'required|string']);
         $lead->update(['status' => $request->status]);
 
-        return redirect()->back()->with('success', "Status updated.");
+        return redirect()->back()->with('success', 'Status updated.');
     }
 
     // 6. Data Deletion (CRUD - Delete)
     public function destroy(Lead $lead)
     {
         Lead::destroy($lead->id);
+
         return redirect()->route('leads.index')->with('success', 'Lead scrubbed.');
     }
 
@@ -123,7 +125,7 @@ class LeadController extends Controller
         ])->validate();
 
         $score = 50;
-        if (!empty($validated['phone'])) {
+        if (! empty($validated['phone'])) {
             $score += 20;
         }
         if ($validated['insurance_type'] === 'Health') {
@@ -142,9 +144,9 @@ class LeadController extends Controller
 
         $lead->update(array_merge($validated, [
             'lead_score' => $score,
-            'priority' => $priority
+            'priority' => $priority,
         ]));
 
-        return redirect()->back()->with('success', "Lead updated.");
+        return redirect()->back()->with('success', 'Lead updated.');
     }
 }

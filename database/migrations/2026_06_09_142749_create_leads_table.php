@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('phone')->nullable();
-            $table->string('insurance_type'); 
+            $table->string('insurance_type');
             $table->integer('lead_score')->default(50);
             $table->string('priority')->default('Medium'); // High, Medium, Low
             $table->string('status')->default('New');      // New, Contacted, Quoted, Submitted, Closed
