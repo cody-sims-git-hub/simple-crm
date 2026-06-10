@@ -62,7 +62,7 @@ SQL `GROUP BY` aggregations by product line and workflow stage.
 - **Full lead lifecycle** — create, view, edit, delete, and a one-click status workflow.
 - **Dashboard** — live pipeline counts and a "high-priority queue" of the top leads to work.
 - **Reporting** — SQL `GROUP BY` aggregations by product line and pipeline stage.
-- **JSON API** — `GET /api/leads` returns the authenticated user's leads, scoped automatically.
+- **Token API** — `GET /api/leads` returns the authenticated user's leads as JSON, authenticated by a Sanctum Bearer token and scoped to that user. Manage your token on the in-app **API Access** page.
 - **Auto-seeded demo data** — every new account is provisioned with a realistic starter pipeline.
 - **Validated inputs** — insurance type is whitelisted; the UI and data never drift apart.
 
@@ -149,7 +149,15 @@ tests/Feature/        Ownership, scoping, validation, provisioning
 
 ## API
 
-`GET /api/leads` — returns the authenticated user's leads as JSON (id, name, status, insurance_type, lead_score). Subject to the same per-user scoping as the rest of the app.
+`GET /api/leads` — returns the authenticated user's leads as JSON (id, name, status, insurance_type, lead_score).
+
+Authenticated with a [Laravel Sanctum](https://laravel.com/docs/sanctum) personal access token. Generate yours on the in-app **API Access** page, then:
+
+```bash
+curl -H "Authorization: Bearer <your-token>" https://demo.simsdigitalpartners.com/api/leads
+```
+
+Results are scoped to the token owner by the relationship query in `LeadApiController` (the model's global owner scope keys off the web session and is intentionally bypassed for stateless token requests). The read-only demo account exposes a fixed token directly on its API Access page so visitors can try it.
 
 ---
 
