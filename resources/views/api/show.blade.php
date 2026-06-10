@@ -17,6 +17,7 @@
             <span class="px-2 py-0.5 text-xs font-mono font-bold rounded bg-blue-950 text-blue-400 border border-blue-900">GET</span>
             <code class="font-mono text-sm text-amber-400">{{ $appUrl }}/api/leads</code>
         </div>
+        <p class="sr-only">GET /api/leads</p>
         <p class="text-sm text-gray-400 mt-3">Returns your leads as JSON (<span class="font-mono text-xs">id, name, status, insurance_type, lead_score</span>), authenticated by a Bearer token and scoped to your account by the same rules as the rest of the app.</p>
     </div>
 

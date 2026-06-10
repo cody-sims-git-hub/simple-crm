@@ -38,7 +38,7 @@
             <a href="{{ route('dashboard') }}" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 transition">📊 Core Dashboard</a>
             <a href="{{ route('leads.index') }}" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 transition">📋 Master Pipeline</a>
             <a href="{{ route('reporting') }}" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 transition">📈 Advanced Analytics</a>
-            <a href="/api/leads" target="_blank" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 transition text-amber-400 font-mono text-xs">📡 GET /api/leads</a>
+            <a href="{{ route('api.show') }}" class="block px-4 py-2.5 rounded-xl hover:bg-gray-800 transition">📡 API Access</a>
         </nav>
 
         @auth
