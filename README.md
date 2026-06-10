@@ -3,12 +3,16 @@
 A lightweight, multi-tenant CRM for insurance lead management — built to showcase a clean server-rendered Laravel architecture with an automated lead-scoring engine, per-user data isolation, and a tested codebase.
 
 [![Security & Quality CI](https://github.com/cody-sims-git-hub/simple-crm/actions/workflows/security-scan.yml/badge.svg)](https://github.com/cody-sims-git-hub/simple-crm/actions/workflows/security-scan.yml)
+&nbsp;_runs:_
+![Dependency audit](https://img.shields.io/badge/SCA-composer_audit-2B3A55)
+![Code style](https://img.shields.io/badge/style-Laravel_Pint-FF2D20?logo=laravel&logoColor=white)
+![Tests](https://img.shields.io/badge/PHPUnit-18_passing-3FB950)
+
 ![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?logo=sqlite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-10_passing-3FB950)
 
 ---
 
@@ -54,6 +58,7 @@ SQL `GROUP BY` aggregations by product line and workflow stage.
 
 - **Automated lead scoring & prioritization** — inbound leads are triaged on creation (see below).
 - **Per-user data ownership (multi-tenancy)** — enforced globally via a single Eloquent scope.
+- **Read-only demo mode** — the shared `demo@example.com` account can browse everything but can't mutate data (blocked server-side by middleware, with the controls hidden in the UI); every registered user keeps full CRUD.
 - **Full lead lifecycle** — create, view, edit, delete, and a one-click status workflow.
 - **Dashboard** — live pipeline counts and a "high-priority queue" of the top leads to work.
 - **Reporting** — SQL `GROUP BY` aggregations by product line and pipeline stage.
