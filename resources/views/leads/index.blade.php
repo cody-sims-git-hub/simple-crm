@@ -19,30 +19,30 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="border-b border-gray-800 text-gray-400 text-xs font-semibold uppercase tracking-wider">
-                        <th class="pb-3">Contact</th>
-                        <th class="pb-3">Product Type</th>
-                        <th class="pb-3 text-center">Score</th>
-                        <th class="pb-3 text-center">Routing Class</th>
-                        <th class="pb-3 text-center">Pipeline State</th>
-                        <th class="pb-3 text-right">System Actions</th>
+                        <th class="pb-3 pr-6 whitespace-nowrap">Contact</th>
+                        <th class="pb-3 px-4 whitespace-nowrap">Product Type</th>
+                        <th class="pb-3 px-4 text-center whitespace-nowrap">Score</th>
+                        <th class="pb-3 px-4 text-center whitespace-nowrap">Routing Class</th>
+                        <th class="pb-3 px-4 text-center whitespace-nowrap">Pipeline State</th>
+                        <th class="pb-3 pl-4 text-right whitespace-nowrap">System Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-800/40 text-sm">
                     @forelse($leads as $lead)
                         <tr class="hover:bg-gray-800/10 transition">
-                            <td class="py-4">
+                            <td class="py-4 pr-6 whitespace-nowrap">
                                 <div class="font-bold text-white">{{ $lead->name }}</div>
                                 <div class="text-xs text-gray-500 font-mono">{{ $lead->email }}</div>
                             </td>
-                            <td class="py-4"><span class="px-2 py-0.5 text-xs rounded bg-gray-950 border border-gray-800 text-gray-300">{{ $lead->insurance_type }}</span></td>
-                            <td class="py-4 text-center font-mono font-bold text-emerald-400">{{ $lead->lead_score }}</td>
-                            <td class="py-4 text-center">
-                                <span class="px-2 py-0.5 text-xs font-semibold rounded-md font-mono {{ $lead->priority === 'High' ? 'bg-red-950 text-red-400 border border-red-900/40' : ($lead->priority === 'Medium' ? 'bg-amber-950 text-amber-400' : 'bg-gray-950 text-gray-400') }}">
+                            <td class="py-4 px-4 whitespace-nowrap"><span class="px-2 py-0.5 text-xs rounded bg-gray-950 border border-gray-800 text-gray-300">{{ $lead->insurance_type }}</span></td>
+                            <td class="py-4 px-4 text-center font-mono font-bold text-emerald-400">{{ $lead->lead_score }}</td>
+                            <td class="py-4 px-4 text-center">
+                                <span class="px-2 py-0.5 text-xs font-semibold rounded-md font-mono whitespace-nowrap {{ $lead->priority === 'High' ? 'bg-red-950 text-red-400 border border-red-900/40' : ($lead->priority === 'Medium' ? 'bg-amber-950 text-amber-400' : 'bg-gray-950 text-gray-400') }}">
                                     {{ $lead->priority }}
                                 </span>
                             </td>
-                            <td class="py-4 text-center"><span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-950 text-blue-400 border border-blue-900">{{ $lead->status }}</span></td>
-                            <td class="py-4 text-right">
+                            <td class="py-4 px-4 text-center"><span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-blue-950 text-blue-400 border border-blue-900">{{ $lead->status }}</span></td>
+                            <td class="py-4 pl-4 text-right whitespace-nowrap">
                                 <div class="inline-flex space-x-2">
                                     <a href="{{ route('leads.show', $lead->id) }}" class="text-xs bg-gray-950 hover:bg-gray-800 border border-gray-800 text-gray-300 px-2.5 py-1 rounded">View</a>
 

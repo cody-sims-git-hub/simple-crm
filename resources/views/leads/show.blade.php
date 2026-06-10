@@ -12,19 +12,19 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="md:col-span-2 space-y-6">
             <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl">
-                <div class="flex justify-between items-start border-b border-gray-800 pb-4 mb-4">
-                    <div>
-                        <h2 class="text-2xl font-bold text-white">{{ $lead->name }}</h2>
+                <div class="flex flex-wrap justify-between items-start gap-3 border-b border-gray-800 pb-4 mb-4">
+                    <div class="min-w-0">
+                        <h2 class="text-2xl font-bold text-white break-words">{{ $lead->name }}</h2>
                         <p class="text-xs text-gray-400 font-mono mt-0.5">Record Created: {{ $lead->created_at->format('M d, Y • H:i') }}</p>
                     </div>
-                    <span class="px-3 py-1 font-mono text-xs font-bold rounded bg-emerald-950 border border-emerald-800 text-emerald-400">Score Matrix: {{ $lead->lead_score }}</span>
+                    <span class="shrink-0 px-3 py-1 font-mono text-xs font-bold rounded bg-emerald-950 border border-emerald-800 text-emerald-400 whitespace-nowrap">Score Matrix: {{ $lead->lead_score }}</span>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 text-sm font-mono mb-6">
-                    <div><span class="text-xs text-gray-500 uppercase block">System Email ID</span><span class="text-gray-200">{{ $lead->email }}</span></div>
-                    <div><span class="text-xs text-gray-500 uppercase block">Secure Telecom Phone</span><span class="text-gray-200">{{ $lead->phone ?? 'Unavailable' }}</span></div>
-                    <div><span class="text-xs text-gray-500 uppercase block">Product Category</span><span class="text-gray-300 font-sans font-semibold">{{ $lead->insurance_type }}</span></div>
-                    <div><span class="text-xs text-gray-500 uppercase block">Algorithmic Routing Target</span><span class="text-amber-400 font-bold">{{ $lead->priority }} Priority</span></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5 text-sm font-mono mb-6">
+                    <div class="min-w-0"><span class="text-xs text-gray-500 uppercase block">System Email ID</span><span class="text-gray-200 break-all">{{ $lead->email }}</span></div>
+                    <div class="min-w-0"><span class="text-xs text-gray-500 uppercase block">Secure Telecom Phone</span><span class="text-gray-200 break-words">{{ $lead->phone ?? 'Unavailable' }}</span></div>
+                    <div class="min-w-0"><span class="text-xs text-gray-500 uppercase block">Product Category</span><span class="text-gray-300 font-sans font-semibold break-words">{{ $lead->insurance_type }}</span></div>
+                    <div class="min-w-0"><span class="text-xs text-gray-500 uppercase block">Algorithmic Routing Target</span><span class="text-amber-400 font-bold break-words">{{ $lead->priority }} Priority</span></div>
                 </div>
 
                 <div class="border-t border-gray-800 pt-4">
