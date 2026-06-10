@@ -19,7 +19,7 @@ class ApiAccessController extends Controller
 
         if ($user->isDemo()) {
             $demoToken = $user->tokens()->where('name', 'api-access')->first();
-            $displayToken = $demoToken
+            $displayToken = $demoToken && config('demo.api_token')
                 ? $demoToken->id.'|'.config('demo.api_token')
                 : null;
         } else {

@@ -113,7 +113,9 @@ class LeadApiTokenTest extends TestCase
     {
         $demo = User::factory()->create(['email' => config('demo.email')]);
 
-        $this->actingAs($demo)->post('/api-access/token')->assertRedirect();
+        $this->actingAs($demo)->post('/api-access/token')
+            ->assertRedirect()
+            ->assertSessionHas('error');
 
         $this->assertFalse(
             $demo->fresh()->tokens()->where('name', 'api-access')->exists()

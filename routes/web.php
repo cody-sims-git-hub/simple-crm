@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApiAccessController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeadController;
 use Illuminate\Support\Facades\Route;
@@ -32,7 +33,7 @@ Route::middleware(['auth', 'demo.readonly'])->group(function () {
     Route::delete('/leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
 
     // API Access showcase page + token generation (demo blocked from POST).
-    Route::get('/api-access', [\App\Http\Controllers\ApiAccessController::class, 'show'])->name('api.show');
-    Route::post('/api-access/token', [\App\Http\Controllers\ApiAccessController::class, 'regenerate'])->name('api.token.regenerate');
+    Route::get('/api-access', [ApiAccessController::class, 'show'])->name('api.show');
+    Route::post('/api-access/token', [ApiAccessController::class, 'regenerate'])->name('api.token.regenerate');
 
 });
