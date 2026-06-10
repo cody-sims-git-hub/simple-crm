@@ -6,13 +6,14 @@ A lightweight, multi-tenant CRM for insurance lead management — built to showc
 &nbsp;_runs:_
 ![Dependency audit](https://img.shields.io/badge/SCA-composer_audit-2B3A55)
 ![Code style](https://img.shields.io/badge/style-Laravel_Pint-FF2D20?logo=laravel&logoColor=white)
-![Tests](https://img.shields.io/badge/PHPUnit-18_passing-3FB950)
+![Tests](https://img.shields.io/badge/PHPUnit-29_passing-3FB950)
 
 ![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?logo=sqlite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![Laravel Sanctum](https://img.shields.io/badge/Laravel_Sanctum-4-FF2D20?logo=laravel&logoColor=white)
 
 ---
 
@@ -51,6 +52,7 @@ SQL `GROUP BY` aggregations by product line and workflow stage.
 | Styling | Tailwind CSS v4 |
 | Build tooling | Vite + `laravel-vite-plugin` |
 | Auth | Session-based, hand-rolled (no starter kit) |
+| API auth | Laravel Sanctum (Bearer tokens) |
 | Testing | PHPUnit 12 |
 | Code style | Laravel Pint |
 
