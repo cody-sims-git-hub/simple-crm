@@ -18,6 +18,23 @@ SimpleCRM models the day-to-day workflow of an insurance sales desk: leads come 
 
 It's intentionally small in surface area but deliberate in its engineering: the interesting parts are the **scoring automation** and the **ownership model**, both implemented so they apply everywhere with almost no repeated code.
 
+## Screenshots
+
+### Core Dashboard
+Live pipeline metrics, the lead-ingestion form, and the auto-prioritized high-value queue.
+
+![SimpleCRM dashboard](docs/screenshots/dashboard.png)
+
+### Master Pipeline
+The full lead table — score, priority routing class, and pipeline stage at a glance.
+
+![SimpleCRM lead pipeline](docs/screenshots/pipeline.png)
+
+### Advanced Analytics
+SQL `GROUP BY` aggregations by product line and workflow stage.
+
+![SimpleCRM analytics](docs/screenshots/analytics.png)
+
 ## Tech Stack
 
 | Layer | Technology |
