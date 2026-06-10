@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeadController;
-use App\Models\Lead;
 use Illuminate\Support\Facades\Route;
 
 // --- Guest Authentication ---
@@ -32,8 +31,4 @@ Route::middleware(['auth', 'demo.readonly'])->group(function () {
 
     Route::delete('/leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
 
-    // --- THE API ENDPOINT ---
-    Route::get('/api/leads', function () {
-        return response()->json(Lead::query()->select(['id', 'name', 'status', 'insurance_type', 'lead_score'])->get());
-    });
 });
