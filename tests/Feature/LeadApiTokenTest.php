@@ -80,7 +80,23 @@ class LeadApiTokenTest extends TestCase
 
         $this->actingAs($user)->get('/api-access')
             ->assertOk()
-            ->assertSee('GET /api/leads');
+            ->assertSee('GET /api/leads')
+            ->assertSee('Generate token');
+    }
+
+    public function test_api_access_page_shows_the_fixed_token_for_demo(): void
+    {
+        $demo = User::factory()->create(['email' => config('demo.email')]);
+        $token = $demo->tokens()->create([
+            'name' => 'api-access',
+            'token' => hash('sha256', config('demo.api_token')),
+            'abilities' => ['*'],
+        ]);
+
+        $this->actingAs($demo)->get('/api-access')
+            ->assertOk()
+            ->assertSee($token->id.'|'.config('demo.api_token'))
+            ->assertDontSee('Generate token');
     }
 
     public function test_user_can_generate_an_api_token(): void
