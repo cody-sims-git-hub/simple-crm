@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Lead;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 class LeadApiTokenTest extends TestCase
@@ -42,29 +41,20 @@ class LeadApiTokenTest extends TestCase
         $this->withToken($aliceToken)->getJson('/api/leads')
             ->assertOk()
             ->assertJsonCount(2);
+    }
 
-        // The sanctum guard memoizes the user it resolved from the first
-        // request's bearer token, and the bound request keeps that cached
-        // user resolver. Without clearing both, a second token request in the
-        // same test method reuses Alice's resolution instead of resolving
-        // Bob's token. Each real HTTP request is a fresh bootstrap, so this is
-        // a test-harness artifact, not production behaviour.
-        $this->resetResolvedAuth();
+    public function test_a_users_token_never_returns_another_users_leads(): void
+    {
+        $alice = User::factory()->create();
+        $bob = User::factory()->create();
+        Lead::factory()->forUser($alice)->count(2)->create();
+        Lead::factory()->forUser($bob)->count(3)->create();
 
         $bobToken = $bob->createToken('api-access')->plainTextToken;
+
         $this->withToken($bobToken)->getJson('/api/leads')
             ->assertOk()
             ->assertJsonCount(3);
-    }
-
-    /**
-     * Drop the resolved guard user and cached request so the next
-     * token-authenticated request re-resolves its user from scratch.
-     */
-    private function resetResolvedAuth(): void
-    {
-        Auth::forgetGuards();
-        $this->app->forgetInstance('request');
     }
 
     public function test_api_does_not_expose_sensitive_fields(): void
