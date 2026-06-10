@@ -1,7 +1,14 @@
 @extends('layouts.app')
 
 @section('content')
+@php($isDemo = auth()->user()->isDemo())
 <div class="space-y-8">
+    @if($isDemo)
+        <div class="bg-gray-900 border border-gray-800 border-l-4 border-l-amber-500 p-4 rounded-xl text-sm text-gray-300">
+            Read-only demo mode: edit and purge controls are visible but disabled.
+            <a href="{{ route('register') }}" class="text-emerald-400 hover:underline">Register your own account</a> for full CRUD access.
+        </div>
+    @endif
     <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl">
         <div class="mb-6">
             <h2 class="text-xl font-bold text-white">System Master Datatable Pipeline</h2>
@@ -39,19 +46,16 @@
                                 <div class="inline-flex space-x-2">
                                     <a href="{{ route('leads.show', $lead->id) }}" class="text-xs bg-gray-950 hover:bg-gray-800 border border-gray-800 text-gray-300 px-2.5 py-1 rounded">View</a>
 
-                                    @unless(auth()->user()->isDemo())
-                                    <button onclick="toggleEditDrawer('{{ $lead->id }}')" class="text-xs bg-gray-950 hover:bg-gray-800 border border-gray-800 text-amber-400 px-2.5 py-1 rounded cursor-pointer">Edit</button>
+                                    <button onclick="toggleEditDrawer('{{ $lead->id }}')" @disabled($isDemo) class="text-xs bg-gray-950 hover:bg-gray-800 border border-gray-800 text-amber-400 px-2.5 py-1 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-gray-950">Edit</button>
 
                                     <form action="{{ route('leads.destroy', $lead->id) }}" method="POST" onsubmit="return confirm('Purge data line permanently?');">
                                         @csrf @method('DELETE')
-                                        <button class="text-xs bg-red-950/40 border border-red-900 text-red-400 hover:bg-red-900 hover:text-white px-2.5 py-1 rounded transition">Purge</button>
+                                        <button @disabled($isDemo) class="text-xs bg-red-950/40 border border-red-900 text-red-400 hover:bg-red-900 hover:text-white px-2.5 py-1 rounded transition disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-950/40 disabled:hover:text-red-400">Purge</button>
                                     </form>
-                                    @endunless
                                 </div>
                             </td>
                         </tr>
 
-                        @unless(auth()->user()->isDemo())
                         <tr id="edit-drawer-{{ $lead->id }}" class="hidden bg-gray-950/60">
                             <td colspan="6" class="p-6 border-b border-gray-800">
                                 <form action="{{ route('leads.update', $lead->id) }}" method="POST" class="space-y-4 max-w-3xl">
@@ -60,19 +64,19 @@
                                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                         <div>
                                             <label class="block text-xs text-gray-400 mb-1">Name</label>
-                                            <input type="text" name="name" value="{{ $lead->name }}" required class="w-full bg-gray-900 border border-gray-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                                            <input type="text" name="name" value="{{ $lead->name }}" required @disabled($isDemo) class="w-full bg-gray-900 border border-gray-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed">
                                         </div>
                                         <div>
                                             <label class="block text-xs text-gray-400 mb-1">Email</label>
-                                            <input type="email" name="email" value="{{ $lead->email }}" required class="w-full bg-gray-900 border border-gray-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                                            <input type="email" name="email" value="{{ $lead->email }}" required @disabled($isDemo) class="w-full bg-gray-900 border border-gray-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed">
                                         </div>
                                         <div>
                                             <label class="block text-xs text-gray-400 mb-1">Phone</label>
-                                            <input type="text" name="phone" value="{{ $lead->phone }}" class="w-full bg-gray-900 border border-gray-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                                            <input type="text" name="phone" value="{{ $lead->phone }}" @disabled($isDemo) class="w-full bg-gray-900 border border-gray-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed">
                                         </div>
                                         <div>
                                             <label class="block text-xs text-gray-400 mb-1">Product</label>
-                                            <select name="insurance_type" class="w-full bg-gray-900 border border-gray-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500">
+                                            <select name="insurance_type" @disabled($isDemo) class="w-full bg-gray-900 border border-gray-800 rounded px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed">
                                                 <option value="Life" {{ $lead->insurance_type === 'Life' ? 'selected' : '' }}>Life Insurance</option>
                                                 <option value="Health" {{ $lead->insurance_type === 'Health' ? 'selected' : '' }}>Health Insurance</option>
                                                 <option value="Medicare" {{ $lead->insurance_type === 'Medicare' ? 'selected' : '' }}>Medicare</option>
@@ -81,16 +85,15 @@
                                     </div>
                                     <div>
                                         <label class="block text-xs text-gray-400 mb-1">Audit Notes</label>
-                                        <textarea name="notes" class="w-full h-16 bg-gray-900 border border-gray-800 rounded p-2 text-xs text-white focus:outline-none focus:border-amber-500">{{ $lead->notes }}</textarea>
+                                        <textarea name="notes" @disabled($isDemo) class="w-full h-16 bg-gray-900 border border-gray-800 rounded p-2 text-xs text-white focus:outline-none focus:border-amber-500 disabled:opacity-60 disabled:cursor-not-allowed">{{ $lead->notes }}</textarea>
                                     </div>
                                     <div class="flex space-x-2 justify-end">
                                         <button type="button" onclick="toggleEditDrawer('{{ $lead->id }}')" class="bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 px-3 py-1.5 rounded">Cancel</button>
-                                        <button type="submit" class="bg-amber-600 hover:bg-amber-500 text-xs text-white font-semibold px-4 py-1.5 rounded shadow">Commit Changes</button>
+                                        <button type="submit" @disabled($isDemo) class="bg-amber-600 hover:bg-amber-500 text-xs text-white font-semibold px-4 py-1.5 rounded shadow disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-600">Commit Changes</button>
                                     </div>
                                 </form>
                             </td>
                         </tr>
-                        @endunless
                     @empty
                         <tr><td colspan="6" class="text-center py-12 text-sm text-gray-500 font-mono">Storage architecture isolated pipeline completely empty.</td></tr>
                     @endforelse

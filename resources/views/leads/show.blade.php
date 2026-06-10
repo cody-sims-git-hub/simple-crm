@@ -36,14 +36,15 @@
 
         <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl h-fit">
             <h3 class="text-sm uppercase font-bold tracking-wider text-gray-400 mb-4">Pipeline Control Block</h3>
-            @if(auth()->user()->isDemo())
-                <p class="text-sm text-gray-400">Workflow state changes are disabled in read-only demo mode.</p>
-            @else
+            @php($isDemo = auth()->user()->isDemo())
+            @if($isDemo)
+                <p class="text-sm text-gray-400 mb-4">Workflow state changes are disabled in read-only demo mode.</p>
+            @endif
             <form action="{{ route('leads.updateStatus', $lead->id) }}" method="POST" class="space-y-4">
                 @csrf @method('PUT')
                 <div>
                     <label class="block text-xs text-gray-500 uppercase font-mono mb-2">Active Workflow State</label>
-                    <select name="status" class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                    <select name="status" @disabled($isDemo) class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed">
                         <option value="New" {{ $lead->status === 'New' ? 'selected' : '' }}>New Profiling</option>
                         <option value="Contacted" {{ $lead->status === 'Contacted' ? 'selected' : '' }}>Agent Contacted</option>
                         <option value="Quoted" {{ $lead->status === 'Quoted' ? 'selected' : '' }}>Policy Quoted</option>
@@ -51,9 +52,8 @@
                         <option value="Closed" {{ $lead->status === 'Closed' ? 'selected' : '' }}>Closed Won</option>
                     </select>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs py-2 rounded-lg transition shadow-md">Transition State Machine</button>
+                <button type="submit" @disabled($isDemo) class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs py-2 rounded-lg transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600">Transition State Machine</button>
             </form>
-            @endif
         </div>
     </div>
 </div>
