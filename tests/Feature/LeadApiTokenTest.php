@@ -73,4 +73,50 @@ class LeadApiTokenTest extends TestCase
         $response->assertJsonMissing(['phone' => '555-0100']);
         $response->assertJsonMissing(['notes' => 'private note']);
     }
+
+    public function test_api_access_page_renders_for_a_user(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get('/api-access')
+            ->assertOk()
+            ->assertSee('GET /api/leads');
+    }
+
+    public function test_user_can_generate_an_api_token(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post('/api-access/token')
+            ->assertRedirect(route('api.show'))
+            ->assertSessionHas('plain_text_token');
+
+        $this->assertTrue(
+            $user->fresh()->tokens()->where('name', 'api-access')->exists()
+        );
+    }
+
+    public function test_regenerating_replaces_the_previous_token(): void
+    {
+        $user = User::factory()->create();
+        $user->createToken('api-access');
+
+        $this->actingAs($user)->post('/api-access/token')->assertRedirect();
+
+        $this->assertSame(
+            1,
+            $user->fresh()->tokens()->where('name', 'api-access')->count()
+        );
+    }
+
+    public function test_demo_account_cannot_generate_a_token(): void
+    {
+        $demo = User::factory()->create(['email' => config('demo.email')]);
+
+        $this->actingAs($demo)->post('/api-access/token')->assertRedirect();
+
+        $this->assertFalse(
+            $demo->fresh()->tokens()->where('name', 'api-access')->exists()
+        );
+    }
 }

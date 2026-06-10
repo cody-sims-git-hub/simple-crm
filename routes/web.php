@@ -31,4 +31,8 @@ Route::middleware(['auth', 'demo.readonly'])->group(function () {
 
     Route::delete('/leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
 
+    // API Access showcase page + token generation (demo blocked from POST).
+    Route::get('/api-access', [\App\Http\Controllers\ApiAccessController::class, 'show'])->name('api.show');
+    Route::post('/api-access/token', [\App\Http\Controllers\ApiAccessController::class, 'regenerate'])->name('api.token.regenerate');
+
 });
