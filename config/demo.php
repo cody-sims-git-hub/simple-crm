@@ -21,11 +21,11 @@ return [
     | Demo API Token (secret half)
     |--------------------------------------------------------------------------
     |
-    | The fixed, read-only Sanctum token secret shown on the API Access page
-    | for the demo account, so any visitor can call GET /api/leads. The full
-    | Bearer value is "{tokenId}|{this secret}", where tokenId is the seeded
-    | personal_access_tokens row id. This grants read-only access to the demo
-    | account's leads only.
+    | The secret half of the demo account's fixed Sanctum token. The API Access
+    | page displays the full Bearer value "{tokenId}|{this secret}" (tokenId is
+    | the seeded personal_access_tokens row id; see DatabaseSeeder), so any
+    | visitor can call GET /api/leads. Grants read-only access to the demo
+    | account's leads only — the API exposes no write routes.
     |
     */
 
