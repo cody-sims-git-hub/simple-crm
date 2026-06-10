@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\BlockDemoWrites;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Behind the Caddy reverse proxy (TLS terminated upstream): trust the
         // forwarded headers so Laravel generates https URLs and secure cookies.
         $middleware->trustProxies(at: '*');
+
+        $middleware->alias([
+            'demo.readonly' => BlockDemoWrites::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

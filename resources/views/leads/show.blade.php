@@ -36,6 +36,9 @@
 
         <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl h-fit">
             <h3 class="text-sm uppercase font-bold tracking-wider text-gray-400 mb-4">Pipeline Control Block</h3>
+            @if(auth()->user()->isDemo())
+                <p class="text-sm text-gray-400">Workflow state changes are disabled in read-only demo mode.</p>
+            @else
             <form action="{{ route('leads.updateStatus', $lead->id) }}" method="POST" class="space-y-4">
                 @csrf @method('PUT')
                 <div>
@@ -50,6 +53,7 @@
                 </div>
                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs py-2 rounded-lg transition shadow-md">Transition State Machine</button>
             </form>
+            @endif
         </div>
     </div>
 </div>

@@ -56,9 +56,21 @@
     </aside>
 
     <main class="flex-1 p-6 md:p-8 overflow-y-auto">
+        @auth
+            @if(auth()->user()->isDemo())
+                <div class="mb-6 bg-amber-950/40 border border-amber-500/30 text-amber-300 p-4 rounded-xl text-sm shadow-xl">
+                    🔒 <strong>Demo mode is read-only.</strong> Register your own account to create and edit records.
+                </div>
+            @endif
+        @endauth
         @if(session('success'))
             <div class="mb-6 bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 p-4 rounded-xl text-sm shadow-xl">
                 ✨ {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="mb-6 bg-rose-950/40 border border-rose-500/30 text-rose-300 p-4 rounded-xl text-sm shadow-xl">
+                ⚠️ {{ session('error') }}
             </div>
         @endif
         @yield('content')

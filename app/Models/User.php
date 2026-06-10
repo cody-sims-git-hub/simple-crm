@@ -38,4 +38,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Lead::class);
     }
+
+    /**
+     * Whether this is the shared, read-only demo account.
+     */
+    public function isDemo(): bool
+    {
+        return $this->email === config('demo.email');
+    }
 }

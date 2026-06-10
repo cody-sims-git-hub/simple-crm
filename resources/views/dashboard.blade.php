@@ -19,6 +19,10 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div class="bg-gray-900 border border-gray-800 p-6 rounded-2xl h-fit">
             <h3 class="text-lg font-bold text-white mb-4">Ingest New Target Profile</h3>
+            @if(auth()->user()->isDemo())
+                <p class="text-sm text-gray-400">Creating leads is disabled in read-only demo mode.
+                    <a href="{{ route('register') }}" class="text-emerald-400 hover:underline">Register your own account</a> to add and edit records.</p>
+            @else
             <form action="{{ route('leads.store') }}" method="POST" class="space-y-4">
                 @csrf
                 <div><label class="block text-xs uppercase tracking-wider text-gray-400 mb-1">Full Name</label><input type="text" name="name" required class="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"></div>
@@ -28,6 +32,7 @@
                 <div><label class="block text-xs uppercase tracking-wider text-gray-400 mb-1">Initial Auditing Notes</label><textarea name="notes" class="w-full h-20 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"></textarea></div>
                 <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm py-2 rounded-lg transition shadow-lg">Execute Optimization Ingestion</button>
             </form>
+            @endif
         </div>
 
         <div class="lg:col-span-2 bg-gray-900 border border-gray-800 p-6 rounded-2xl">

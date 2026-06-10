@@ -38,17 +38,20 @@
                             <td class="py-4 text-right">
                                 <div class="inline-flex space-x-2">
                                     <a href="{{ route('leads.show', $lead->id) }}" class="text-xs bg-gray-950 hover:bg-gray-800 border border-gray-800 text-gray-300 px-2.5 py-1 rounded">View</a>
-                                    
+
+                                    @unless(auth()->user()->isDemo())
                                     <button onclick="toggleEditDrawer('{{ $lead->id }}')" class="text-xs bg-gray-950 hover:bg-gray-800 border border-gray-800 text-amber-400 px-2.5 py-1 rounded cursor-pointer">Edit</button>
-                                    
+
                                     <form action="{{ route('leads.destroy', $lead->id) }}" method="POST" onsubmit="return confirm('Purge data line permanently?');">
                                         @csrf @method('DELETE')
                                         <button class="text-xs bg-red-950/40 border border-red-900 text-red-400 hover:bg-red-900 hover:text-white px-2.5 py-1 rounded transition">Purge</button>
                                     </form>
+                                    @endunless
                                 </div>
                             </td>
                         </tr>
 
+                        @unless(auth()->user()->isDemo())
                         <tr id="edit-drawer-{{ $lead->id }}" class="hidden bg-gray-950/60">
                             <td colspan="6" class="p-6 border-b border-gray-800">
                                 <form action="{{ route('leads.update', $lead->id) }}" method="POST" class="space-y-4 max-w-3xl">
@@ -87,6 +90,7 @@
                                 </form>
                             </td>
                         </tr>
+                        @endunless
                     @empty
                         <tr><td colspan="6" class="text-center py-12 text-sm text-gray-500 font-mono">Storage architecture isolated pipeline completely empty.</td></tr>
                     @endforelse

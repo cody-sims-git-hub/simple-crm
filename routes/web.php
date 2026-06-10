@@ -15,8 +15,8 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
-// --- Authenticated CRM ---
-Route::middleware('auth')->group(function () {
+// --- Authenticated CRM (demo account is read-only: write methods blocked) ---
+Route::middleware(['auth', 'demo.readonly'])->group(function () {
     // Views & Pages
     Route::get('/', [LeadController::class, 'dashboard'])->name('dashboard');
     Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
