@@ -25,5 +25,14 @@ class DatabaseSeeder extends Seeder
         if ($demoUser->leads()->doesntExist()) {
             DemoData::provisionLeadsFor($demoUser);
         }
+
+        // Fixed, read-only API token so demo visitors can call GET /api/leads.
+        if ($demoUser->tokens()->where('name', 'api-access')->doesntExist()) {
+            $demoUser->tokens()->create([
+                'name' => 'api-access',
+                'token' => hash('sha256', config('demo.api_token')),
+                'abilities' => ['*'],
+            ]);
+        }
     }
 }

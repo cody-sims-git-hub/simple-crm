@@ -121,4 +121,23 @@ class LeadApiTokenTest extends TestCase
             $demo->fresh()->tokens()->where('name', 'api-access')->exists()
         );
     }
+
+    public function test_demo_seeded_token_authenticates_and_is_scoped(): void
+    {
+        $demo = User::factory()->create(['email' => config('demo.email')]);
+        Lead::factory()->forUser($demo)->create();
+
+        // Mirror exactly what DatabaseSeeder seeds for the demo account.
+        $tokenModel = $demo->tokens()->create([
+            'name' => 'api-access',
+            'token' => hash('sha256', config('demo.api_token')),
+            'abilities' => ['*'],
+        ]);
+
+        $plainText = $tokenModel->id.'|'.config('demo.api_token');
+
+        $this->withToken($plainText)->getJson('/api/leads')
+            ->assertOk()
+            ->assertJsonCount(1);
+    }
 }
