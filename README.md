@@ -40,6 +40,11 @@ SQL `GROUP BY` aggregations by product line and workflow stage.
 
 ![SimpleCRM analytics](docs/screenshots/analytics.png)
 
+### API Access
+Token-authenticated REST access — generate a Sanctum Bearer token, copy a ready-to-run `curl`, and see the live JSON response, all scoped to your account.
+
+![SimpleCRM API Access page](docs/screenshots/api-access.png)
+
 ## Tech Stack
 
 | Layer | Technology |
