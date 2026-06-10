@@ -81,7 +81,8 @@ class LeadApiTokenTest extends TestCase
         $this->actingAs($user)->get('/api-access')
             ->assertOk()
             ->assertSee('GET /api/leads')
-            ->assertSee('Generate token');
+            ->assertSee('Generate token')
+            ->assertSee('scoped to your account');
     }
 
     public function test_api_access_page_shows_the_fixed_token_for_demo(): void
@@ -96,6 +97,7 @@ class LeadApiTokenTest extends TestCase
         $this->actingAs($demo)->get('/api-access')
             ->assertOk()
             ->assertSee($token->id.'|'.config('demo.api_token'))
+            ->assertSee('scoped to the demo account')
             ->assertDontSee('Generate token');
     }
 

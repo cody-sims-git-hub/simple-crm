@@ -8,7 +8,7 @@
             <h2 class="text-2xl font-bold text-white">📡 API Access</h2>
             <p class="text-xs text-gray-400">Programmatic, token-authenticated access to your pipeline data.</p>
         </div>
-        <span class="px-3 py-1 text-xs font-mono font-semibold rounded-full bg-emerald-950 border border-emerald-800 text-emerald-400">Read-only · scoped to your account</span>
+        <span class="px-3 py-1 text-xs font-mono font-semibold rounded-full bg-emerald-950 border border-emerald-800 text-emerald-400">Read-only · scoped to {{ $isDemo ? 'the demo account' : 'your account' }}</span>
     </div>
 
     {{-- Endpoint --}}
