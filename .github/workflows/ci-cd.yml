@@ -1,0 +1,114 @@
+name: CI / Deploy
+
+# CI runs on every PR and every push to main.
+# Production deploy ONLY runs on push to main, and ONLY after the CI job
+# passes (enforced by `needs: ci`). Pull requests never deploy.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Cancel superseded CI runs on the same ref; never cancel a deploy mid-flight.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Test & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      # Dependency vulnerability scan (SCA) against the Composer advisory database.
+      - name: Audit PHP dependencies
+        run: composer audit
+
+      # Static style gate — fails if any file drifts from the project's Pint ruleset.
+      - name: Check code style (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install npm dependencies
+        run: npm install --no-audit --no-fund
+
+      # Build gate — front-end assets must compile (same build the image runs).
+      - name: Build front-end assets
+        run: npm run build
+
+      - name: Prepare test environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # Full PHPUnit suite (ownership, scoping, validation, provisioning, auth).
+      - name: Run test suite
+        run: php artisan test
+
+  deploy:
+    name: Deploy to production
+    # HARD GATE: deploy cannot start unless the `ci` job succeeded.
+    needs: ci
+    # Only on a push to main (never on PRs, never on other branches), and only
+    # once production deploys have been explicitly enabled via the repo variable.
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    # Serialize production deploys so two pushes can't deploy concurrently.
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    steps:
+      # The VPS is reachable only over Tailscale (100.x CGNAT address), so the
+      # runner joins the tailnet first using an ephemeral, tagged node.
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Deploy on VPS
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" bash -se <<'REMOTE'
+          set -euo pipefail
+          cd /home/cody/stacks/apps/simple-crm
+          git pull --ff-only
+          docker compose up -d --build
+          REMOTE
+
+      # Confirm the new container is actually serving before calling it a success.
+      - name: Verify production health
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://demo.simsdigitalpartners.com/up || true)
+            echo "attempt $i: HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 6
+          done
+          echo "Health check never returned 200"; exit 1
