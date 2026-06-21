@@ -56,7 +56,7 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      # Full PHPUnit suite (ownership, scoping, validation, provisioning, auth).
+      # Full PHPUnit suite (tests use in-memory SQLite — no DB service needed).
       - name: Run test suite
         run: php artisan test
 
@@ -64,43 +64,35 @@ jobs:
     name: Deploy to production
     # HARD GATE: deploy cannot start unless the `ci` job succeeded.
     needs: ci
-    # Only on a push to main (never on PRs, never on other branches), and only
-    # once production deploys have been explicitly enabled via the repo variable.
-    if: >-
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/main' &&
-      vars.DEPLOY_ENABLED == 'true'
+    # Only on a push to main — never on PRs, never on other branches.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # Serialize production deploys so two pushes can't deploy concurrently.
     concurrency:
       group: production-deploy
       cancel-in-progress: false
     steps:
-      # The VPS is reachable only over Tailscale (100.x CGNAT address), so the
-      # runner joins the tailnet first using an ephemeral, tagged node.
+      # The VPS is reachable only over Tailscale (CGNAT address), so the runner
+      # joins the tailnet first using a reusable, pre-authorized auth key.
       - name: Connect to Tailscale
         uses: tailscale/github-action@v3
         with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:ci
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 
-      - name: Configure SSH
+      # SSH auth is handled by Tailscale SSH (the tailnet ACL authorizes the
+      # CI node -> VPS as this user), so no SSH private key is needed here.
+      - name: Deploy over Tailscale SSH
+        env:
+          HOST: ${{ secrets.VPS_SSH_HOST }}
+          USER: ${{ secrets.VPS_SSH_USER }}
+          DIR:  ${{ secrets.VPS_DEPLOY_DIR }}
+        # $USER/$HOST/$DIR are expanded by the runner shell (from `env:` above)
+        # and baked into the command string sent to the VPS. A rebuilt image
+        # makes `up -d` recreate the container, which re-runs the serversideup
+        # boot automations (config:cache + migrate) against .env.
         run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
-
-      - name: Deploy on VPS
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
-            "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" bash -se <<'REMOTE'
-          set -euo pipefail
-          cd /home/cody/stacks/apps/simple-crm
-          git pull --ff-only
-          docker compose up -d --build
-          REMOTE
+          ssh -o StrictHostKeyChecking=accept-new "$USER@$HOST" \
+            "set -e; cd '$DIR'; git pull --ff-only; docker compose build; docker compose up -d; docker image prune -f"
 
       # Confirm the new container is actually serving before calling it a success.
       - name: Verify production health
