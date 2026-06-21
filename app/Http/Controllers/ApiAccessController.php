@@ -33,7 +33,7 @@ class ApiAccessController extends Controller
             ->select(['id', 'name', 'status', 'insurance_type', 'lead_score'])
             ->get();
 
-        return view('api.show', [
+        return view('integrations.api', [
             'displayToken' => $displayToken,
             'hasToken' => $hasToken,
             'sampleLeads' => $sampleLeads,
@@ -53,7 +53,7 @@ class ApiAccessController extends Controller
         $token = $user->createToken('api-access');
 
         return redirect()
-            ->route('api.show')
+            ->route('integrations.api')
             ->with('plain_text_token', $token->plainTextToken);
     }
 }

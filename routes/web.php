@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\ApiAccessController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Integrations\IntegrationsController;
+use App\Http\Controllers\Integrations\WebhookController;
 use App\Http\Controllers\LeadController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,8 +40,20 @@ Route::middleware(['auth', 'demo.readonly'])->group(function () {
 
     Route::delete('/leads/{lead}', [LeadController::class, 'destroy'])->name('leads.destroy');
 
-    // API Access showcase page + token generation (demo blocked from POST).
-    Route::get('/api-access', [ApiAccessController::class, 'show'])->name('api.show');
-    Route::post('/api-access/token', [ApiAccessController::class, 'regenerate'])->name('api.token.regenerate');
+    // --- Integrations area ---
+    Route::get('/integrations', [IntegrationsController::class, 'index'])->name('integrations.index');
+
+    // API Access console + token generation (demo blocked from POST).
+    Route::get('/integrations/api', [ApiAccessController::class, 'show'])->name('integrations.api');
+    Route::post('/integrations/api/token', [ApiAccessController::class, 'regenerate'])->name('integrations.api.token');
+
+    // CSV export (read-only; demo may export).
+    Route::get('/integrations/export', [IntegrationsController::class, 'export'])->name('integrations.export');
+    Route::get('/integrations/export/leads.csv', [IntegrationsController::class, 'downloadLeads'])->name('integrations.export.leads');
+
+    // Webhooks: save URL, enable/disable, send a test (demo blocked from POST).
+    Route::get('/integrations/webhooks', [WebhookController::class, 'index'])->name('integrations.webhooks');
+    Route::post('/integrations/webhooks', [WebhookController::class, 'store'])->name('integrations.webhooks.store');
+    Route::post('/integrations/webhooks/test', [WebhookController::class, 'test'])->name('integrations.webhooks.test');
 
 });
