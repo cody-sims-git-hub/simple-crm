@@ -2,7 +2,7 @@
 
 A lightweight, multi-tenant CRM for insurance lead management — built to showcase a clean server-rendered Laravel architecture with an automated lead-scoring engine, per-user data isolation, and a tested codebase.
 
-[![Security & Quality CI](https://github.com/cody-sims-git-hub/simple-crm/actions/workflows/security-scan.yml/badge.svg)](https://github.com/cody-sims-git-hub/simple-crm/actions/workflows/security-scan.yml)
+[![CI / Deploy](https://github.com/cody-sims-git-hub/simple-crm/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/cody-sims-git-hub/simple-crm/actions/workflows/ci-cd.yml)
 &nbsp;_runs:_
 ![Dependency audit](https://img.shields.io/badge/SCA-composer_audit-2B3A55)
 ![Code style](https://img.shields.io/badge/style-Laravel_Pint-FF2D20?logo=laravel&logoColor=white)

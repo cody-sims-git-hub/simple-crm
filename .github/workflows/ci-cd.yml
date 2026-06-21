@@ -3,11 +3,21 @@ name: CI / Deploy
 # CI runs on every PR and every push to main.
 # Production deploy ONLY runs on push to main, and ONLY after the CI job
 # passes (enforced by `needs: ci`). Pull requests never deploy.
+# Docs-only changes (Markdown, LICENSE) skip the pipeline entirely so a README
+# tweak doesn't trigger a production redeploy.
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
 
 # Cancel superseded CI runs on the same ref; never cancel a deploy mid-flight.
 concurrency:
