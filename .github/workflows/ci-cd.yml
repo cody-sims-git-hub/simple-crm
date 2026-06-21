@@ -28,6 +28,9 @@ jobs:
   ci:
     name: Test & Build
     runs-on: ubuntu-latest
+    # Allow the green-main badge step to push the test count to the `badges` branch.
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -67,8 +70,28 @@ jobs:
           php artisan key:generate
 
       # Full PHPUnit suite (tests use in-memory SQLite — no DB service needed).
+      # --log-junit produces a machine-readable report for the dynamic badge.
       - name: Run test suite
-        run: php artisan test
+        run: php artisan test --log-junit junit.xml
+
+      # Publish the live PHPUnit count to the `badges` branch as a shields.io
+      # endpoint JSON. Only on a green push to main (this step runs after the
+      # test gate, so a red suite never updates the badge). Uses the built-in
+      # GITHUB_TOKEN — no PAT or external gist required.
+      - name: Publish test-count badge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          total=$(grep -o '<testcase ' junit.xml | wc -l | tr -d ' ')
+          echo "PHPUnit test count: $total"
+          printf '{"schemaVersion":1,"label":"PHPUnit","message":"%s passing","color":"3FB950"}' "$total" > tests.json
+          tmp=$(mktemp -d); cp tests.json "$tmp/"; cd "$tmp"
+          git init -q && git checkout -q -b badges && git add tests.json
+          git -c user.name="github-actions[bot]" \
+              -c user.email="github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "chore: update PHPUnit test-count badge ($total passing)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" badges
 
   deploy:
     name: Deploy to production

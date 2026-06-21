@@ -6,7 +6,7 @@ A lightweight, multi-tenant CRM for insurance lead management — built to showc
 &nbsp;_runs:_
 ![Dependency audit](https://img.shields.io/badge/SCA-composer_audit-2B3A55)
 ![Code style](https://img.shields.io/badge/style-Laravel_Pint-FF2D20?logo=laravel&logoColor=white)
-![Tests](https://img.shields.io/badge/PHPUnit-29_passing-3FB950)
+![Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/cody-sims-git-hub/simple-crm/badges/tests.json)
 
 ![PHP](https://img.shields.io/badge/PHP-8.4-777BB4?logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
