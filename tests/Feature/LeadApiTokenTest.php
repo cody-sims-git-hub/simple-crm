@@ -78,11 +78,11 @@ class LeadApiTokenTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->get('/api-access')
+        $this->actingAs($user)->get('/integrations/api')
             ->assertOk()
             ->assertSee('GET /api/leads')
-            ->assertSee('Generate token')
-            ->assertSee('scoped to your account');
+            ->assertSee('Generate key')
+            ->assertSee('Read-only · your account');
     }
 
     public function test_api_access_page_shows_the_fixed_token_for_demo(): void
@@ -94,19 +94,19 @@ class LeadApiTokenTest extends TestCase
             'abilities' => ['*'],
         ]);
 
-        $this->actingAs($demo)->get('/api-access')
+        $this->actingAs($demo)->get('/integrations/api')
             ->assertOk()
             ->assertSee($token->id.'|'.config('demo.api_token'))
-            ->assertSee('scoped to the demo account')
-            ->assertDontSee('Generate token');
+            ->assertSee('Read-only · the demo account')
+            ->assertDontSee('Generate key');
     }
 
     public function test_user_can_generate_an_api_token(): void
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->post('/api-access/token')
-            ->assertRedirect(route('api.show'))
+        $this->actingAs($user)->post('/integrations/api/token')
+            ->assertRedirect(route('integrations.api'))
             ->assertSessionHas('plain_text_token');
 
         $this->assertTrue(
@@ -119,7 +119,7 @@ class LeadApiTokenTest extends TestCase
         $user = User::factory()->create();
         $user->createToken('api-access');
 
-        $this->actingAs($user)->post('/api-access/token')->assertRedirect();
+        $this->actingAs($user)->post('/integrations/api/token')->assertRedirect();
 
         $this->assertSame(
             1,
@@ -131,7 +131,7 @@ class LeadApiTokenTest extends TestCase
     {
         $demo = User::factory()->create(['email' => config('demo.email')]);
 
-        $this->actingAs($demo)->post('/api-access/token')
+        $this->actingAs($demo)->post('/integrations/api/token')
             ->assertRedirect()
             ->assertSessionHas('error');
 
