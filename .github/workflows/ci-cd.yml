@@ -1,10 +1,12 @@
 name: CI / Deploy
 
-# CI runs on every PR and every push to main.
-# Production deploy ONLY runs on push to main, and ONLY after the CI job
-# passes (enforced by `needs: ci`). Pull requests never deploy.
-# Docs-only changes (Markdown, LICENSE) skip the pipeline entirely so a README
-# tweak doesn't trigger a production redeploy.
+# Solo-dev flow:
+#   * feature/fix branches: push freely — CI runs nothing (you test locally).
+#   * open a PR to main: fast lint + audit only (sanity net + a place to delay/review).
+#   * push/merge to main: full build + test, then production deploy.
+#   * deploy ONLY runs from main, and only after the full suite is green.
+#   * docs-only changes (Markdown/LICENSE) skip the pipeline entirely.
+#   * merged PR branches are auto-deleted via the repo's delete_branch_on_merge setting.
 on:
   push:
     branches: [ main ]
@@ -19,18 +21,18 @@ on:
       - 'docs/**'
       - 'LICENSE'
 
-# Cancel superseded CI runs on the same ref; never cancel a deploy mid-flight.
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  ci:
-    name: Test & Build
+  # ── PR only: lightweight validation. No npm build, no test suite, no deploy. ──
+  pr-check:
+    name: PR validation (lint + audit)
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    # Allow the green-main badge step to push the test count to the `badges` branch.
     permissions:
-      contents: write
+      contents: read
+    # Pushing more commits to an open PR cancels the superseded check.
+    concurrency:
+      group: pr-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -52,6 +54,32 @@ jobs:
       - name: Check code style (Pint)
         run: ./vendor/bin/pint --test
 
+  # ── main only: authoritative full build + test gate before deploy. ──
+  ci:
+    name: Test & Build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # badge push to the `badges` branch
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Audit PHP dependencies
+        run: composer audit
+
+      - name: Check code style (Pint)
+        run: ./vendor/bin/pint --test
+
       - name: Set up Node 22
         uses: actions/setup-node@v4
         with:
@@ -69,17 +97,14 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      # Full PHPUnit suite (tests use in-memory SQLite — no DB service needed).
-      # --log-junit produces a machine-readable report for the dynamic badge.
+      # Full PHPUnit suite (in-memory SQLite). --log-junit feeds the dynamic badge.
       - name: Run test suite
         run: php artisan test --log-junit junit.xml
 
-      # Publish the live PHPUnit count to the `badges` branch as a shields.io
-      # endpoint JSON. Only on a green push to main (this step runs after the
-      # test gate, so a red suite never updates the badge). Uses the built-in
-      # GITHUB_TOKEN — no PAT or external gist required.
+      # Publish the live PHPUnit count to the `badges` branch (shields endpoint).
+      # The job is already main-push-only, so no per-step guard is needed. Uses the
+      # built-in GITHUB_TOKEN — no PAT or external gist required.
       - name: Publish test-count badge
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -95,12 +120,11 @@ jobs:
 
   deploy:
     name: Deploy to production
-    # HARD GATE: deploy cannot start unless the `ci` job succeeded.
+    # HARD GATE: cannot start unless the full CI job succeeded.
     needs: ci
-    # Only on a push to main — never on PRs, never on other branches.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # Serialize production deploys so two pushes can't deploy concurrently.
+    # Serialize and NEVER cancel a deploy mid-flight.
     concurrency:
       group: production-deploy
       cancel-in-progress: false
