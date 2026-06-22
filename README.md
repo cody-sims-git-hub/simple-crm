@@ -15,6 +15,8 @@ A lightweight, multi-tenant CRM for insurance lead management — built to showc
 ![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
 ![Laravel Sanctum](https://img.shields.io/badge/Laravel_Sanctum-4-FF2D20?logo=laravel&logoColor=white)
 
+**Live demo:** **[demo.simsdigitalpartners.com](https://demo.simsdigitalpartners.com)** — sign in with the read-only demo account `demo@example.com` / `password`, or register your own.
+
 ---
 
 ## Overview
@@ -25,25 +27,40 @@ It's intentionally small in surface area but deliberate in its engineering: the 
 
 ## Screenshots
 
-### Core Dashboard
-Live pipeline metrics, the lead-ingestion form, and the auto-prioritized high-value queue.
+### Dashboard
+Live pipeline metrics, the add-a-lead form, and the auto-prioritized high-priority queue.
 
 ![SimpleCRM dashboard](docs/screenshots/dashboard.png)
 
-### Master Pipeline
-The full lead table — score, priority routing class, and pipeline stage at a glance.
+### Records
+Your full book of business — each lead's score, priority, and pipeline stage at a glance, with inline editing and one-click status changes.
 
-![SimpleCRM lead pipeline](docs/screenshots/pipeline.png)
+![SimpleCRM records](docs/screenshots/records.png)
 
-### Advanced Analytics
-SQL `GROUP BY` aggregations by product line and workflow stage.
+### Analytics
+SQL `GROUP BY` aggregations by product line and pipeline stage.
 
 ![SimpleCRM analytics](docs/screenshots/analytics.png)
 
-### API Access
-Token-authenticated REST access — generate a Sanctum Bearer token, copy a ready-to-run `curl`, and see the live JSON response, all scoped to your account.
+### Integrations
+Connect SimpleCRM to external tools — token API access, CSV export, and webhooks.
 
-![SimpleCRM API Access page](docs/screenshots/api-access.png)
+![SimpleCRM integrations](docs/screenshots/integrations.png)
+
+#### API access
+Generate a Sanctum Bearer token, copy a ready-to-run `curl`, and see the live JSON response, scoped to your account.
+
+![SimpleCRM API access](docs/screenshots/integrations-api.png)
+
+#### Data export
+Download your leads as a CSV.
+
+![SimpleCRM CSV export](docs/screenshots/integrations-export.png)
+
+#### Webhooks
+Save an endpoint, send a test delivery, and review the delivery log — with an SSRF-guarded URL check.
+
+![SimpleCRM webhooks](docs/screenshots/integrations-webhooks.png)
 
 ## Tech Stack
 
@@ -69,7 +86,7 @@ Token-authenticated REST access — generate a Sanctum Bearer token, copy a read
 - **Full lead lifecycle** — create, view, edit, delete, and a one-click status workflow.
 - **Dashboard** — live pipeline counts and a "high-priority queue" of the top leads to work.
 - **Reporting** — SQL `GROUP BY` aggregations by product line and pipeline stage.
-- **Token API** — `GET /api/leads` returns the authenticated user's leads as JSON, authenticated by a Sanctum Bearer token and scoped to that user. Manage your token on the in-app **API Access** page.
+- **Token API** — `GET /api/leads` returns the authenticated user's leads as JSON, authenticated by a Sanctum Bearer token and scoped to that user. Manage your token on the in-app **Integrations → API access** page.
 - **Auto-seeded demo data** — every new account is provisioned with a realistic starter pipeline.
 - **Validated inputs** — insurance type is whitelisted; the UI and data never drift apart.
 
@@ -113,7 +130,7 @@ The result: the controller contains zero ownership-handling code, yet isolation 
 
 ## Getting Started
 
-**Requirements:** PHP 8.4+, Composer, and (optionally) Node.js for asset builds.
+**Requirements:** PHP 8.4+, Composer, and Node.js 22+ (Tailwind is compiled through Vite, so the front-end assets are built locally).
 
 ```bash
 # Install dependencies, create .env, generate key, migrate + seed, build assets
@@ -130,7 +147,7 @@ Email:    demo@example.com
 Password: password
 ```
 
-> Prefer the bare minimum? `php artisan migrate --seed` then `php artisan serve` is enough — the UI loads Tailwind via CDN, so a Node build isn't required to view it.
+> Prefer the bare minimum? `composer run setup` builds the front-end assets, after which `php artisan serve` will serve them. Tailwind is compiled through Vite (not a CDN), so the assets must be built — run `composer run dev` during development to recompile on change.
 
 ## Testing
 
@@ -158,13 +175,13 @@ tests/Feature/        Ownership, scoping, validation, provisioning
 
 `GET /api/leads` — returns the authenticated user's leads as JSON (id, name, status, insurance_type, lead_score).
 
-Authenticated with a [Laravel Sanctum](https://laravel.com/docs/sanctum) personal access token. Generate yours on the in-app **API Access** page, then:
+Authenticated with a [Laravel Sanctum](https://laravel.com/docs/sanctum) personal access token. Generate yours on the in-app **Integrations → API access** page, then:
 
 ```bash
 curl -H "Authorization: Bearer <your-token>" https://demo.simsdigitalpartners.com/api/leads
 ```
 
-Results are scoped to the token owner by the relationship query in `LeadApiController` (the model's global owner scope keys off the web session and is intentionally bypassed for stateless token requests). The read-only demo account exposes a fixed token directly on its API Access page so visitors can try it.
+Results are scoped to the token owner by the relationship query in `LeadApiController` (the model's global owner scope keys off the web session and is intentionally bypassed for stateless token requests). The read-only demo account exposes a fixed token directly on its API access page (under Integrations) so visitors can try it.
 
 ---
 
