@@ -152,12 +152,18 @@ jobs:
             "set -e; cd '$DIR'; git pull --ff-only; docker compose build; docker compose up -d; docker image prune -f"
 
       # Confirm the new container is actually serving before calling it a success.
+      # Each curl is time-bounded (--connect-timeout/--max-time) so a container
+      # that is mid-recreate — accepting the connection but not yet responding —
+      # can never hang this step; an initial grace covers the boot automations
+      # (config:cache + migrate) that run on container start.
       - name: Verify production health
         run: |
-          for i in $(seq 1 10); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' https://demo.simsdigitalpartners.com/up || true)
+          sleep 10
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /dev/null --connect-timeout 5 --max-time 10 \
+                   -w '%{http_code}' https://demo.simsdigitalpartners.com/up || echo 000)
             echo "attempt $i: HTTP $code"
-            [ "$code" = "200" ] && exit 0
+            [ "$code" = "200" ] && echo "Production healthy." && exit 0
             sleep 6
           done
           echo "Health check never returned 200"; exit 1
