@@ -5,12 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign in • SimpleCRM</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    @include('partials.brand-theme')
-    <style>
-        /* Scale the whole UI up: all Tailwind text & spacing utilities are rem-based. */
-        html { font-size: 125%; }
-    </style>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-canvas text-slate-light min-h-screen flex items-center justify-center p-6">
 

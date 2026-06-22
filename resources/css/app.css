@@ -1,9 +1,48 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+/* Where utility classes live, so the compiled build includes them: Blade
+   views plus the pipeline stage-color config (classes are composed as
+   strings there). */
+@source '../views';
+@source '../../config';
 
+/* Brand theme tokens — palette extracted from simsdigitalpartners.com.
+   Defined here (the Vite entry) so the compiled stylesheet is the single
+   source of truth for the theme. */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Surfaces — deep navy page, lighter navy cards, raised controls */
+    --color-canvas: #060B14;
+    --color-surface: #0C1320;
+    --color-surface-raised: #18222F;
+    --color-surface-hover: #212C3B;
+
+    /* Slate borders */
+    --color-hairline: #1E2835;
+    --color-hairline-strong: #2A3645;
+
+    /* Electric blue primary + soft glow accents */
+    --color-accent: #1983FB;
+    --color-accent-hover: #3D97FC;
+    --color-accent-muted: #0E2740;
+
+    /* White / slate text */
+    --color-ink: #F6F9FC;
+    --color-slate-light: #CBD5E1;
+    --color-slate: #94A3B8;
+    --color-slate-dim: #64748B;
+
+    /* Secondary palette — the ONLY non-blue accents, used sparingly to
+       signal meaning (never decoration). Blue stays the dominant accent. */
+    --color-success: #34D399;
+    --color-warning: #F59E0B;
+    --color-danger: #FB7185;
+    --color-info: #A78BFA;
+
+    /* Soft blue glow for primary actions */
+    --shadow-glow: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 0 0 1px color-mix(in srgb, #1983FB 20%, transparent), 0 12px 36px -12px color-mix(in srgb, #1983FB 45%, transparent);
+}
+
+/* Scale the whole UI up: all Tailwind text & spacing utilities are rem-based. */
+html {
+    font-size: 125%;
 }
