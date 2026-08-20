@@ -34,6 +34,7 @@ set -euo pipefail
 
 APP_UID="${APP_UID:-33}"   # www-data in the serversideup/php base image
 SERVICE="${SERVICE:-crm-app}"
+WAIT_SECONDS="${WAIT_SECONDS:-120}"   # ceiling for the post-deploy readiness wait
 ENV_FILE="${ENV_FILE:-.env}"
 ENV_IN_CONTAINER="/var/www/html/.env"
 
@@ -99,6 +100,30 @@ case "${1:-}" in
 
     docker compose ps --status running --services 2>/dev/null | grep -qx "$SERVICE" \
       || die "service '$SERVICE' is not running"
+
+    # `docker compose up -d` returns as soon as the container is started, not
+    # when it is ready. The boot automations (config:cache, migrate) run inside
+    # the container after that, so asserting immediately races them and reports
+    # a missing config cache that is simply not written yet.
+    #
+    # Wait on the container healthcheck, which is the thing that already knows.
+    # Bounded, because a container that never becomes healthy is a real failure
+    # and this must not hang a deploy.
+    printf 'env-guard: waiting for %s to become healthy' "$SERVICE"
+    health=""
+    for _ in $(seq 1 "$WAIT_SECONDS"); do
+      health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' \
+        "$(docker compose ps -q "$SERVICE")" 2>/dev/null || echo unknown)"
+      case "$health" in
+        healthy|none) break ;;
+      esac
+      printf '.'
+      sleep 1
+    done
+    printf '\n'
+
+    [ "$health" = "healthy" ] || [ "$health" = "none" ] || die "$SERVICE did not become healthy within ${WAIT_SECONDS}s (last state: ${health:-unknown}).
+       Check: docker compose logs --tail 50 $SERVICE"
 
     if ! docker compose exec -T "$SERVICE" sh -lc "[ -r '$ENV_IN_CONTAINER' ]"; then
       runtime_uid="$(docker compose exec -T "$SERVICE" sh -lc 'id -u' 2>/dev/null | tr -d '\r')"
