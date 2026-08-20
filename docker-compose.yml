@@ -8,18 +8,12 @@ services:
     container_name: crm-app
     restart: unless-stopped
     environment:
-      # Run the PHP process as the host user that owns ./.env (uid/gid 1000).
+      # NOTE: PUID/PGID are deliberately absent. They look like the obvious fix
+      # for the .env ownership problem and they do nothing here — this image
+      # starts as www-data, so its remap script has no privileges to usermod and
+      # silently skips. Ownership is handled on the host by deploy/env-guard.sh,
+      # which the deploy asserts afterwards.
       #
-      # The serversideup image defaults to www-data (uid 33). ./.env is mode 600
-      # owned by 1000, so www-data could not read it: APP_KEY resolved empty,
-      # every request that touched the encrypter threw MissingAppKeyException,
-      # and AUTORUN_LARAVEL_CONFIG_CACHE below then cached that empty config at
-      # boot. Every page 500'd from 2026-07-22 until this was fixed.
-      #
-      # Remapping the runtime user is preferable to loosening the file: .env
-      # holds credentials and stays at 600.
-      PUID: "1000"
-      PGID: "1000"
       # serversideup init automations (read from process env, not Laravel's .env)
       AUTORUN_ENABLED: "true"
       AUTORUN_LARAVEL_MIGRATION: "true"
