@@ -23,8 +23,8 @@ cp .env.production.example .env
 sed -i "s|^APP_KEY=.*|APP_KEY=base64:$(openssl rand -base64 32)|" .env
 #   (adjust APP_URL in .env if using a different domain)
 
-# 2b. Hand .env to the container's runtime user (uid 33 / www-data).
-#     cp above creates it owned by YOU at mode 600, which the container cannot
+# 2b. Give .env its two readers: the container (uid 33) and docker compose
+#     (you). cp above creates it owned by YOU alone, which the container cannot
 #     read — see "The .env ownership trap" under Notes. Deploys run this
 #     automatically; it is listed here so a first-time bootstrap is correct too.
 bash deploy/env-guard.sh fix
@@ -71,8 +71,16 @@ Two things prevent a repeat, both in `deploy/env-guard.sh`:
 
 | | |
 |---|---|
-| `env-guard.sh fix` | chowns `.env` to uid 33, mode unchanged at 600. Runs before `docker compose up` on every deploy, and is a bootstrap step above. |
-| `env-guard.sh verify` | asserts the running container can read `.env` **and** that `app.key` is non-empty. Exits non-zero, failing the deploy, rather than letting it boot into a cached empty config. |
+| `env-guard.sh fix` | sets `.env` to `33:<deploy group>` mode `640`. Runs before `docker compose up` on every deploy, and is a bootstrap step above. |
+| `env-guard.sh verify` | asserts **both** readers work — the deploying user and the running container — **and** that `app.key` is non-empty. Exits non-zero, failing the deploy, rather than letting it boot into a cached empty config. |
+
+**`.env` has two readers, and they are different users.** The container reads it as
+uid 33; `docker compose` reads it as whoever deploys, because compose treats a
+project-root `.env` as its own variable-interpolation file. Giving it exclusively
+to uid 33 at mode `600` satisfies the first and breaks the second with
+`open /path/.env: permission denied` on every compose command — which is exactly
+what the first attempt at this fix did. Hence `640`: owned by the app user,
+grouped to the deploying user, still not world-readable.
 
 `PUID`/`PGID` look like the natural fix and do not work on this image — it starts
 as www-data, so the base image's remap script has no privileges and skips
