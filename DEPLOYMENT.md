@@ -71,7 +71,7 @@ Two things prevent a repeat, both in `deploy/env-guard.sh`:
 
 | | |
 |---|---|
-| `env-guard.sh fix` | sets `.env` to `33:<deploy group>` mode `640`. Runs before `docker compose up` on every deploy, and is a bootstrap step above. |
+| `env-guard.sh fix` | sets `.env` to `33:<deploy group>` mode `640`. Runs before `docker compose up` on every deploy, and is a bootstrap step above. Self-healing — see below. |
 | `env-guard.sh verify` | asserts **both** readers work — the deploying user and the running container — that `app.key` is non-empty, and that `GET /login` renders 200 from inside the container. Exits non-zero, failing the deploy, rather than letting it boot into a cached empty config. |
 
 The real-page check runs **inside the container** deliberately, so no CDN sits in
@@ -93,6 +93,30 @@ with the only difference being an origin Cloudflare will answer.
 
 Between the two checks both halves are covered: a broken app behind a working
 edge, and a working app behind a broken edge.
+
+**`fix` repairs ownership itself rather than telling you to.** `chown` to another
+uid is root-only and the deploy deliberately runs as an ordinary user, so it
+escalates through three tiers, cheapest first:
+
+1. **direct** — already root (hand bootstrap, or a root-run deploy)
+2. **`sudo -n`** — where sudoers allows it. Not assumed: *this box requires a
+   password*, so on this host the tier is a no-op
+3. **a throwaway root container** — `docker run --rm --user 0:0` with the
+   checkout bind-mounted
+
+Tier 3 is what makes a rebuilt VPS come up correct on its own, and it grants
+nothing new: docker group membership is already root-equivalent, and the deploy
+user must have it or `docker compose up` could never run. There is no host where
+the deploy works but this tier doesn't.
+
+If all three fail, the deploy stops with the exact `sudo` command to run. It
+stops *before* `docker compose build`, so a broken `.env` aborts the deploy
+rather than recreating the container into a bad config — the running site is
+left untouched.
+
+Verified against the real failure on 2026-08-20: `.env` was reset to
+`cody:cody 600`, the deploy was run, and it self-healed to `www-data:cody 640`
+and went green without intervention.
 
 **`.env` has two readers, and they are different users.** The container reads it as
 uid 33; `docker compose` reads it as whoever deploys, because compose treats a

@@ -17,6 +17,9 @@
 #
 #   fix     — make the ownership correct, so a fresh clone or a rebuilt VPS
 #             comes up right without anyone remembering this file exists.
+#             Self-healing: escalates through direct chown, sudo -n, then a
+#             throwaway root container, so it works on a box with no sudoers
+#             entry (which is what this one turned out to be).
 #   verify  — prove the running container can actually read .env and resolve a
 #             real APP_KEY, and fail the deploy loudly if it cannot.
 #
@@ -72,9 +75,40 @@ case "${1:-}" in
     fi
 
     echo "env-guard: $ENV_FILE is $before, wants $want mode 640 — fixing"
-    if ! { chown "$APP_UID:$DEPLOY_GID" "$ENV_FILE" && chmod 640 "$ENV_FILE"; } 2>/dev/null; then
+
+    # Three ways to become root, tried cheapest first. chown-to-another-uid is
+    # root-only, and the deploy deliberately runs as an ordinary user, so at
+    # least one of these has to work or the fix is advice rather than a fix.
+    #
+    #   1. direct   — already root (bootstrap by hand, or a root-run deploy)
+    #   2. sudo -n  — where sudoers allows it. Not assumed: this box requires a
+    #                 password, so this tier silently does nothing here.
+    #   3. docker   — a throwaway root container with the checkout bind-mounted.
+    #
+    # (3) is what makes this self-healing rather than a polite error message,
+    # and it grants nothing new: membership of the docker group is already
+    # root-equivalent, and the deploy user must have it or `docker compose up`
+    # could never run. So there is no box where the deploy works but this tier
+    # does not.
+    fix_perms() { chown "$APP_UID:$DEPLOY_GID" "$1" && chmod 640 "$1"; }
+
+    if ! fix_perms "$ENV_FILE" 2>/dev/null; then
       sudo -n chown "$APP_UID:$DEPLOY_GID" "$ENV_FILE" 2>/dev/null || true
       sudo -n chmod 640 "$ENV_FILE" 2>/dev/null || true
+    fi
+
+    if [ "$(stat -c '%u:%g %a' "$ENV_FILE")" != "$want 640" ] && command -v docker >/dev/null 2>&1; then
+      # Prefer an image already on the box so this costs nothing. On a genuinely
+      # fresh host nothing is built yet, hence the busybox fallback — 2MB, and
+      # only ever pulled on first bootstrap.
+      helper="$(docker compose config --images 2>/dev/null | head -1)"
+      docker image inspect "$helper" >/dev/null 2>&1 || helper=""
+      [ -n "$helper" ] || helper="busybox"
+
+      echo "env-guard: not permitted directly; escalating via a root container ($helper)"
+      docker run --rm --user 0:0 -v "$PWD:/mnt/repo" "$helper" \
+        sh -c "chown $APP_UID:$DEPLOY_GID /mnt/repo/$ENV_FILE && chmod 640 /mnt/repo/$ENV_FILE" \
+        </dev/null >/dev/null 2>&1 || true
     fi
 
     after="$(stat -c '%u:%g %a' "$ENV_FILE")"
@@ -82,7 +116,8 @@ case "${1:-}" in
        It is '$after' and must be '$want 640' — uid $APP_UID is the container's
        runtime user, gid $DEPLOY_GID is the group that owns this checkout so
        docker compose can still read it.
-       This deploy runs as $(id -un) (uid $(id -u)); only root can chown to another user.
+       This deploy runs as $(id -un) (uid $(id -u)); chown to another uid needs root,
+       and all three escalation routes failed (direct, sudo -n, docker).
        Run this on the host, then re-run the deploy:
            sudo chown $APP_UID:$DEPLOY_GID '$PWD/$ENV_FILE' && sudo chmod 640 '$PWD/$ENV_FILE'"
 
@@ -162,9 +197,9 @@ case "${1:-}" in
 
     # Finally, render a real page. app.key resolving proves the config is sane;
     # it does not prove the app serves. Done from inside the container on
-    # purpose: Cloudflare's WAF challenges /login from datacenter IPs, so an
-    # external check of this path 403s from CI while the app is perfectly
-    # healthy. In here there is no CDN in the path.
+    # purpose, so nothing between here and the app can colour the result — no
+    # Cloudflare, no Caddy, no DNS. The workflow checks the public URL
+    # separately; this one is about the app itself.
     page_code="$(docker compose exec -T "$SERVICE" \
       curl -sS -o /dev/null -w '%{http_code}' --max-time 10 \
       http://127.0.0.1:8080/login 2>/dev/null | tr -d '\r' || true)"
