@@ -72,7 +72,14 @@ Two things prevent a repeat, both in `deploy/env-guard.sh`:
 | | |
 |---|---|
 | `env-guard.sh fix` | sets `.env` to `33:<deploy group>` mode `640`. Runs before `docker compose up` on every deploy, and is a bootstrap step above. |
-| `env-guard.sh verify` | asserts **both** readers work — the deploying user and the running container — **and** that `app.key` is non-empty. Exits non-zero, failing the deploy, rather than letting it boot into a cached empty config. |
+| `env-guard.sh verify` | asserts **both** readers work — the deploying user and the running container — that `app.key` is non-empty, and that `GET /login` renders 200 from inside the container. Exits non-zero, failing the deploy, rather than letting it boot into a cached empty config. |
+
+The real-page check runs **inside the container** deliberately: Cloudflare's WAF
+challenges `/login` from datacenter IPs, so an external check of that path returns
+403 from CI while the app is perfectly healthy. The workflow's own health step
+therefore stays on `/up`, which is the right probe for *reachability* through
+Cloudflare and Caddy. Between the two, both halves are covered — a broken app
+behind a working edge, and a working app behind a broken edge.
 
 **`.env` has two readers, and they are different users.** The container reads it as
 uid 33; `docker compose` reads it as whoever deploys, because compose treats a
