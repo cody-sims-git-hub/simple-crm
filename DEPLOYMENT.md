@@ -23,6 +23,12 @@ cp .env.production.example .env
 sed -i "s|^APP_KEY=.*|APP_KEY=base64:$(openssl rand -base64 32)|" .env
 #   (adjust APP_URL in .env if using a different domain)
 
+# 2b. Hand .env to the container's runtime user (uid 33 / www-data).
+#     cp above creates it owned by YOU at mode 600, which the container cannot
+#     read — see "The .env ownership trap" under Notes. Deploys run this
+#     automatically; it is listed here so a first-time bootstrap is correct too.
+bash deploy/env-guard.sh fix
+
 # 3. Build & start (migrations run automatically on boot)
 docker compose up -d --build
 
@@ -43,6 +49,37 @@ docker exec caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile
 ```
 
 ## Notes
+
+### The .env ownership trap
+
+`.env` is bind-mounted read-only into the container, and the image runs as
+**www-data (uid 33)** — not as the user who deployed it. `cp .env.production.example .env`
+creates the file owned by the deploying user at mode 600, which uid 33 cannot read.
+
+When that happens the failure is quiet and durable:
+
+- `APP_KEY` resolves to an empty string
+- every request that touches the encrypter throws `MissingAppKeyException`
+- `AUTORUN_LARAVEL_CONFIG_CACHE` caches that empty config at boot, so it survives restarts
+- `SQLite` falls back to the framework default path instead of the one in `.env`
+
+Production ran that way from 2026-07-22 to 2026-08-20 — every page 500ing, while
+Docker reported the container `healthy`, because the healthcheck hit `/up`, which
+renders without resolving the encrypter.
+
+Two things prevent a repeat, both in `deploy/env-guard.sh`:
+
+| | |
+|---|---|
+| `env-guard.sh fix` | chowns `.env` to uid 33, mode unchanged at 600. Runs before `docker compose up` on every deploy, and is a bootstrap step above. |
+| `env-guard.sh verify` | asserts the running container can read `.env` **and** that `app.key` is non-empty. Exits non-zero, failing the deploy, rather than letting it boot into a cached empty config. |
+
+`PUID`/`PGID` look like the natural fix and do not work on this image — it starts
+as www-data, so the base image's remap script has no privileges and skips
+silently. The container healthcheck and the deploy's health verify both hit
+`/login` rather than `/up` for the same reason the outage was invisible.
+
+### Other notes
 
 - **Demo login:** `demo@example.com` / `password`. New registrations get their own
   isolated starter pipeline.
