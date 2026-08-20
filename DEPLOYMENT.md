@@ -74,12 +74,25 @@ Two things prevent a repeat, both in `deploy/env-guard.sh`:
 | `env-guard.sh fix` | sets `.env` to `33:<deploy group>` mode `640`. Runs before `docker compose up` on every deploy, and is a bootstrap step above. |
 | `env-guard.sh verify` | asserts **both** readers work — the deploying user and the running container — that `app.key` is non-empty, and that `GET /login` renders 200 from inside the container. Exits non-zero, failing the deploy, rather than letting it boot into a cached empty config. |
 
-The real-page check runs **inside the container** deliberately: Cloudflare's WAF
-challenges `/login` from datacenter IPs, so an external check of that path returns
-403 from CI while the app is perfectly healthy. The workflow's own health step
-therefore stays on `/up`, which is the right probe for *reachability* through
-Cloudflare and Caddy. Between the two, both halves are covered — a broken app
-behind a working edge, and a working app behind a broken edge.
+The real-page check runs **inside the container** deliberately, so no CDN sits in
+the path of the assertion that matters. Reachability through the public URL is
+checked separately by the workflow — but *from the VPS*, not from the runner:
+
+| probed from | `/up` | `/login` |
+|---|---|---|
+| a residential IP | 200 | 200 |
+| the VPS itself | 200 | 200 |
+| a GitHub Actions runner | **403** | **403** |
+
+Cloudflare returns 403 to the runner's address range on every path, and this used
+to pass (last green run 2026-06-22), so it is an edge-config change rather than
+anything in this repo. A probe from CI therefore measures Cloudflare's opinion of
+GitHub's IPs and says nothing about the deploy. Running it from the VPS keeps the
+whole public path under test — same DNS, same edge, same Caddy, same container —
+with the only difference being an origin Cloudflare will answer.
+
+Between the two checks both halves are covered: a broken app behind a working
+edge, and a working app behind a broken edge.
 
 **`.env` has two readers, and they are different users.** The container reads it as
 uid 33; `docker compose` reads it as whoever deploys, because compose treats a

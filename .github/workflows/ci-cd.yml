@@ -151,28 +151,62 @@ jobs:
           ssh -o StrictHostKeyChecking=accept-new "$USER@$HOST" \
             "set -e; cd '$DIR'; git pull --ff-only; bash deploy/env-guard.sh fix; docker compose build; docker compose up -d; docker image prune -f; bash deploy/env-guard.sh verify"
 
-      # External reachability only — that the request survives Cloudflare, Caddy
-      # and the container. /up is right for THIS check: Cloudflare's WAF
-      # challenges /login from datacenter IPs, so hitting it from a runner 403s
-      # while the app is perfectly healthy.
+      # Cloudflare answers this runner's egress with 403 on EVERY path, not just
+      # /login. Measured, because the first guess was wrong and shipped as a
+      # comment in #17:
       #
-      # The "does a real page actually render" assertion is not skipped, it just
-      # belongs somewhere the CDN is not in the path: deploy/env-guard.sh verify
-      # (above) curls /login from inside the container. Between the two, both
-      # halves of the failure that hid for 30 days are covered — a broken app
-      # behind a working edge, and a working app behind a broken edge.
+      #   from a residential IP   /up 200   /login 200
+      #   from the VPS itself     /up 200   /login 200   (also a datacenter IP)
+      #   from a GitHub runner    /up 403   /login 403
+      #
+      # It is the runner's IP range Cloudflare objects to, and this used to pass
+      # (last green run 2026-06-22), so it is an edge-config change, not ours. A
+      # probe from here measures Cloudflare's opinion of GitHub's address space
+      # and tells us nothing about the deploy.
+      #
+      # So the full public path is checked from the VPS instead. Same DNS, same
+      # Cloudflare edge, same Caddy, same container — the only difference is an
+      # origin Cloudflare is willing to answer. Nothing is stubbed out.
+      #
+      # Depth is covered separately: deploy/env-guard.sh verify (above) curls
+      # /login from inside the container, proving a real page renders and not
+      # just that something answered. Between them both halves of the failure
+      # that hid for 30 days are covered — a broken app behind a working edge,
+      # and a working app behind a broken edge.
+      #
       # Each curl is time-bounded (--connect-timeout/--max-time) so a container
-      # that is mid-recreate — accepting the connection but not yet responding —
-      # can never hang this step; an initial grace covers the boot automations
+      # mid-recreate — accepting the connection but not yet responding — can
+      # never hang this step; the initial grace covers the boot automations
       # (config:cache + migrate) that run on container start.
-      - name: Verify production health
+      - name: Verify production health (full public path, probed from the VPS)
+        env:
+          HOST: ${{ secrets.VPS_SSH_HOST }}
+          USER: ${{ secrets.VPS_SSH_USER }}
         run: |
-          sleep 10
-          for i in $(seq 1 20); do
-            code=$(curl -s -o /dev/null --connect-timeout 5 --max-time 10 \
-                   -w '%{http_code}' https://demo.simsdigitalpartners.com/up || echo 000)
-            echo "attempt $i: HTTP $code"
-            [ "$code" = "200" ] && echo "Production healthy." && exit 0
-            sleep 6
+          ssh -o StrictHostKeyChecking=accept-new "$USER@$HOST" '
+            sleep 10
+            for i in $(seq 1 20); do
+              code=$(curl -s -o /dev/null --connect-timeout 5 --max-time 10 \
+                     -w "%{http_code}" https://demo.simsdigitalpartners.com/up || echo 000)
+              echo "attempt $i: HTTP $code"
+              [ "$code" = "200" ] && echo "Production healthy (public URL, through Cloudflare)." && exit 0
+              sleep 6
+            done
+            echo "Health check never returned 200"; exit 1
+          '
+
+      # Non-gating. Records what the edge does to runner IPs so the next person
+      # to see a 403 here has the evidence instead of the guess. If this ever
+      # starts reporting 200, the step above can move back to the runner.
+      - name: Observe edge behaviour from the runner (informational)
+        if: always()
+        continue-on-error: true
+        run: |
+          for path in /up /login; do
+            echo "--- $path ---"
+            curl -sS -o /dev/null --connect-timeout 5 --max-time 10 \
+                 -w 'http=%{http_code}\n' "https://demo.simsdigitalpartners.com$path" || true
+            curl -sSI --connect-timeout 5 --max-time 10 \
+                 "https://demo.simsdigitalpartners.com$path" 2>/dev/null \
+              | grep -iE '^(cf-ray|cf-mitigated|server|http/)' || true
           done
-          echo "Health check never returned 200"; exit 1
