@@ -160,7 +160,20 @@ case "${1:-}" in
        The config cache was almost certainly built while .env was unreadable.
        Fix: deploy/env-guard.sh fix && docker compose up -d --force-recreate"
 
-    echo "env-guard: OK — .env readable by both the deploying user and the container; app.key resolves ($key_len chars)"
+    # Finally, render a real page. app.key resolving proves the config is sane;
+    # it does not prove the app serves. Done from inside the container on
+    # purpose: Cloudflare's WAF challenges /login from datacenter IPs, so an
+    # external check of this path 403s from CI while the app is perfectly
+    # healthy. In here there is no CDN in the path.
+    page_code="$(docker compose exec -T "$SERVICE" \
+      curl -sS -o /dev/null -w '%{http_code}' --max-time 10 \
+      http://127.0.0.1:8080/login 2>/dev/null | tr -d '\r' || true)"
+
+    [ "$page_code" = "200" ] || die "the app is not serving: GET /login returned '${page_code:-no response}' inside the container.
+       Config looks fine (app.key is $key_len chars), so this is not the .env problem.
+       Check: docker compose logs --tail 50 $SERVICE"
+
+    echo "env-guard: OK — .env readable by both the deploying user and the container; app.key resolves ($key_len chars); /login renders 200"
     ;;
 
   *)

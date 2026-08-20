@@ -151,10 +151,16 @@ jobs:
           ssh -o StrictHostKeyChecking=accept-new "$USER@$HOST" \
             "set -e; cd '$DIR'; git pull --ff-only; bash deploy/env-guard.sh fix; docker compose build; docker compose up -d; docker image prune -f; bash deploy/env-guard.sh verify"
 
-      # Confirm the new container is actually serving before calling it a success.
-      # /login, not /up: Laravel's health route renders without resolving the
-      # encrypter, so it returned 200 for the whole month the app was 500ing on
-      # every real page. This has to hit something that boots the framework.
+      # External reachability only — that the request survives Cloudflare, Caddy
+      # and the container. /up is right for THIS check: Cloudflare's WAF
+      # challenges /login from datacenter IPs, so hitting it from a runner 403s
+      # while the app is perfectly healthy.
+      #
+      # The "does a real page actually render" assertion is not skipped, it just
+      # belongs somewhere the CDN is not in the path: deploy/env-guard.sh verify
+      # (above) curls /login from inside the container. Between the two, both
+      # halves of the failure that hid for 30 days are covered — a broken app
+      # behind a working edge, and a working app behind a broken edge.
       # Each curl is time-bounded (--connect-timeout/--max-time) so a container
       # that is mid-recreate — accepting the connection but not yet responding —
       # can never hang this step; an initial grace covers the boot automations
@@ -164,7 +170,7 @@ jobs:
           sleep 10
           for i in $(seq 1 20); do
             code=$(curl -s -o /dev/null --connect-timeout 5 --max-time 10 \
-                   -w '%{http_code}' https://demo.simsdigitalpartners.com/login || echo 000)
+                   -w '%{http_code}' https://demo.simsdigitalpartners.com/up || echo 000)
             echo "attempt $i: HTTP $code"
             [ "$code" = "200" ] && echo "Production healthy." && exit 0
             sleep 6
