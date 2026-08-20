@@ -107,18 +107,35 @@ case "${1:-}" in
        Fix: deploy/env-guard.sh fix && docker compose up -d --force-recreate"
     fi
 
-    key_len="$(docker compose exec -T "$SERVICE" \
-      php -r 'echo strlen(config("app.key") ?? "");' 2>/dev/null | tr -d '\r')"
+    # Read the key out of the CACHED config, which is what the running app
+    # actually booted with — the whole failure mode was a cache built while
+    # .env was unreadable, so that file is the honest thing to inspect.
+    #
+    # Note it is `include`, not config(): a bare `php -r` has no framework
+    # bootstrapped, so config() is undefined there and the command dies with an
+    # empty result. And `|| true` matters — under `set -e` a failing command
+    # substitution aborts the script before any of the checks below get to run,
+    # which produces a bare exit 255 with no explanation.
+    key_len="$(docker compose exec -T "$SERVICE" php -r '
+      $f = "bootstrap/cache/config.php";
+      $c = is_file($f) ? include $f : null;
+      echo is_array($c) ? strlen($c["app"]["key"] ?? "") : "nocache";
+    ' 2>/dev/null | tr -d '\r' || true)"
+
+    [ "$key_len" != "nocache" ] || die "no cached config in the container.
+       AUTORUN_LARAVEL_CONFIG_CACHE should have written bootstrap/cache/config.php at boot.
+       Check: docker compose logs $SERVICE"
 
     case "$key_len" in
-      ''|*[!0-9]*) die "could not read app.key length from the container (got: '$key_len')" ;;
+      ''|*[!0-9]*) die "could not read app.key from the container (got: '$key_len').
+       Check: docker compose exec $SERVICE php -r 'var_dump(is_file(\"bootstrap/cache/config.php\"));'" ;;
     esac
 
     [ "$key_len" -gt 0 ] || die "APP_KEY resolves empty inside the container.
        The config cache was almost certainly built while .env was unreadable.
        Fix: deploy/env-guard.sh fix && docker compose up -d --force-recreate"
 
-    echo "env-guard: OK — .env readable, app.key resolves ($key_len chars)"
+    echo "env-guard: OK — .env readable by both the deploying user and the container; app.key resolves ($key_len chars)"
     ;;
 
   *)
