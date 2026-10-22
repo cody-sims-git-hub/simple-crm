@@ -9,7 +9,10 @@ RUN npm run build
 
 # ── Stage 2: production image for SimpleCRM — nginx + php-fpm tuned for Laravel.
 # serversideup/php serves public/ on port 8080 as the non-root www-data user.
-FROM serversideup/php:8.4-fpm-nginx
+# Pinned to a PHP patch release so the version running in production is the one
+# in this file: 8.4.27 is the first 8.4 release fixed for PHP2Shell
+# (CVE-2026-109618, CVE-2026-109619). Raise it when PHP ships a security fix.
+FROM serversideup/php:8.4.27-fpm-nginx
 
 # Ensure the SQLite PDO driver is present, and pre-create the data directory.
 # The empty DB file seeds the named volume on first run (owned by www-data),

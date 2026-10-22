@@ -2,7 +2,8 @@
 
 SimpleCRM runs as a single Docker container behind a [Caddy](https://caddyserver.com)
 reverse proxy that terminates TLS (automatic Let's Encrypt). The app image
-(`serversideup/php:8.4-fpm-nginx`) serves `public/` on port **8080** and uses a
+(`serversideup/php:8.4.27-fpm-nginx`, pinned to a PHP patch release in the
+`Dockerfile`) serves `public/` on port **8080** and uses a
 **SQLite** database persisted on a named volume.
 
 ## Prerequisites

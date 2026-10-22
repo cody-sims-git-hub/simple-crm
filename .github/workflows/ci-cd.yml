@@ -144,12 +144,14 @@ jobs:
           USER: ${{ secrets.VPS_SSH_USER }}
           DIR:  ${{ secrets.VPS_DEPLOY_DIR }}
         # $USER/$HOST/$DIR are expanded by the runner shell (from `env:` above)
-        # and baked into the command string sent to the VPS. A rebuilt image
+        # and baked into the command string sent to the VPS. `build --pull`
+        # fetches the base image fresh: without it the VPS reused a cached
+        # base for months and production sat on PHP 8.4.24. A rebuilt image
         # makes `up -d` recreate the container, which re-runs the serversideup
         # boot automations (config:cache + migrate) against .env.
         run: |
           ssh -o StrictHostKeyChecking=accept-new "$USER@$HOST" \
-            "set -e; cd '$DIR'; git pull --ff-only; bash deploy/env-guard.sh fix; docker compose build; docker compose up -d; docker image prune -f; bash deploy/env-guard.sh verify"
+            "set -e; cd '$DIR'; git pull --ff-only; bash deploy/env-guard.sh fix; docker compose build --pull; docker compose up -d; docker image prune -f; bash deploy/env-guard.sh verify"
 
       # Cloudflare answers this runner's egress with 403 on EVERY path, not just
       # /login. Measured, because the first guess was wrong and shipped as a
