@@ -21,7 +21,10 @@ USER root
 RUN install-php-extensions pdo_sqlite \
  && mkdir -p /data \
  && touch /data/database.sqlite \
- && chown -R www-data:www-data /data
+ && chown -R www-data:www-data /data \
+ # CVE-2026-115560 (unpatched): turn off session upload progress, which the
+ # exploit needs. Nothing here uses it; remove once PHP ships the fix.
+ && printf 'session.upload_progress.enabled = 0\n' > "$PHP_INI_DIR/conf.d/zz-security.ini"
 
 # Copy the application source (vendor/, .env, dev artifacts excluded via .dockerignore).
 COPY --chown=www-data:www-data . /var/www/html
